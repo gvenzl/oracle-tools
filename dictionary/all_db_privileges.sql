@@ -22,29 +22,30 @@
 
 -- Creates a view "ALL_DB_PRIVILEGES" that will return all available
 -- privileges in Oracle Database.
+-- TYPE:
+--    OBJECT: Privileges on objects, i.e. GRANT ... ON <object> TO <user>/<role>;
+--    SYSTEM: System privilege, i.e. GRANT ... TO <user>/<role>;
+--    USER: Privileges on users, i.e. GRANT ... ON USER <user> TO <user>/<role>'
 
-CREATE VIEW all_db_privileges (type, name, grantability, privilege_code) AS
+CREATE OR REPLACE VIEW all_db_privileges (type, name, grantability) AS
   SELECT
-      'Object privilege' AS type,
+      'OBJECT' AS type,
       name,
-      'SQL GRANT statement' AS grantability,
-      privilege AS privilege_code
+      'SQL GRANT statement' AS grantability
     FROM sys.table_privilege_map
   UNION ALL
   SELECT
-      'System privilege' AS type,
+      'SYSTEM' AS type,
       name,
       CASE
         WHEN property = 0 THEN 'SQL GRANT statement'
         WHEN property = 1 THEN 'PL/SQL package'
         ELSE 'Unknown'
-      END AS grantability,
-      privilege AS privilege_code
+      END AS grantability
   FROM sys.system_privilege_map
   UNION ALL
   SELECT
       'USER' AS type,
       name,
-      'SQL GRANT statement' AS grantability,
-      privilege AS privilege_code
+      'SQL GRANT statement' AS grantability
     FROM sys.user_privilege_map;
