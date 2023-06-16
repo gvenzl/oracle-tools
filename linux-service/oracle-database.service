@@ -1,13 +1,15 @@
 [Unit]
 Description=Oracle Database(s) and Listener
+After=network.target
 Requires=network.target
 
 [Service]
 Type=forking
 Restart=no
+User=oracle
+Group=dba
 ExecStart=###ORACLE_HOME###/bin/dbstart ###ORACLE_HOME###
 ExecStop=###ORACLE_HOME###/bin/dbshut ###ORACLE_HOME###
-User=oracle
 
 [Install]
 WantedBy=multi-user.target
