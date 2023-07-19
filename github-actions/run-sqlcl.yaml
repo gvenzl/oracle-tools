@@ -1,0 +1,16 @@
+name: Run SQLcl in GitHub Actions 🚀
+on: [push, pull_request]
+jobs:
+  setup-database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: gvenzl/setup-oracle-free@v1
+        with:
+          app-user: test            # Use a GitHub Secret here
+          app-user-password: test   # Use a GitHub Secret here
+          tag: slim
+      - uses: gvenzl/setup-oracle-sqlcl@v1
+      - name: Run SQLcl
+        run: |
+          echo "SELECT 'Hello there!';" | sql test/test@localhost/FREEPDB1  # connect via GitHub Secrets, i.e. sql ${{ secrets.<your_secret> }}/${{ secrets.<your_second_secret> }}@localhost/FREEPDB1
