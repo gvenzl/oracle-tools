@@ -1,0 +1,15 @@
+name: Run Oracle DB in GitHub Actions 🅾️
+on: [push, pull_request]
+jobs:
+  oracle-db-free:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: gvenzl/setup-oracle-free@v1
+        with:
+          tag: slim
+          app-user: test             # Use a GitHub Secret here
+          app-user-password: test    # Use a GitHub Secret here!
+      - name: Run your regression tests
+        run: |
+          echo "Tests to be run here" # Connect to the Database via app-user/app-user-password@localhost/<DB service name>
