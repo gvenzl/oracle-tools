@@ -2,11 +2,12 @@
 
 This repo contains tools for and around Oracle Database.
 
-| Directory                        | Description   |
-|----------------------------------|---------------|
-| [dictionary](./dictionary)       | Scripts and tools for the Oracle Database dictionary |
-| [linux-service](./linux-service) | A Linux `systemd` service for Oracle Database
-| [sqlcl](./sqlcl)                 | Tools for [SQLcl](https://www.oracle.com/database/sqldeveloper/technologies/sqlcl/) |
+| Directory                          | Description   |
+|------------------------------------|---------------|
+| [dictionary](./dictionary)         | Scripts and tools for the Oracle Database dictionary |
+| [github-actions](./github-actions) | YAML files for running Oracle DB and tools in [GitHub Actions](https://docs.github.com/en/actions)
+| [linux-service](./linux-service)   | A Linux `systemd` service for Oracle Database
+| [sqlcl](./sqlcl)                   | Tools for [SQLcl](https://www.oracle.com/database/sqldeveloper/technologies/sqlcl/) |
 
 # License
 
