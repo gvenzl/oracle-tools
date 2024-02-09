@@ -1,7 +1,7 @@
 #!/bin/bash
 # MIT License
 #
-# Copyright (c) 2023 Kris Rice, Gerald Venzl
+# Copyright (c) 2024 Kris Rice, Gerald Venzl
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,53 +26,64 @@ sql() {
   #
   # . <(curl -s https://raw.githubusercontent.com/gvenzl/oracle-tools/main/sqlcl/sql)
 
-  # Set the stage directory
+  # Set global vars
   STAGE_DIR=/var/tmp
+  DOWNLOAD_URL="https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip"
+  DOWNLOAD_FILE="sqlcl-latest.zip"
+  ETAG_FILE="sqlcl.etag"
 
-  # Check whether internet connection exists
-  if ping -c 1 -W 3 download.oracle.com > /dev/null; then
-
+  # Check whether an internet connection exists
+  if ! ping -c 1 -W 3 download.oracle.com > /dev/null; then
+    echo "⚠️  Cannot verify latest SQLcl version."
+  else
     echo "🔄 Checking SQLcl version..."
 
-    # Get current ETAG from download
-    ETAG=$(curl -I -s https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip | tr -d '\r'  | sed -En 's/^ETag: (.*)/\1/p')
-
-    #echo "REMOTE-ETAG: $ETAG"
-
-    # Compare to last ETag saved
-    if [[ -e $STAGE_DIR/sqlcl.etag ]]; then
-        CURRENT_ETAG=$(cat $STAGE_DIR/sqlcl.etag)
-        #echo "LOCAL-ETAG: $CURRENT_ETAG"
+    # Get stored local ETag
+    if [[ -e $STAGE_DIR/$ETAG_FILE ]]; then
+      CURRENT_ETAG=$(cat $STAGE_DIR/$ETAG_FILE)
     else
-        CURRENT_ETAG="none"
+      CURRENT_ETAG="none"
     fi
 
-    # Check if ETags match
-    if [[ "$ETAG" != "$CURRENT_ETAG" ]]; then
-      echo "⬇️  Downloading latest SQLcl..."
-      curl -sS -o $STAGE_DIR/sqlcl-latest.zip \
-            --header "If-None-Match: ${CURRENT_ETAG}" \
-            https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
-      echo "🧹 Removing old SQLcl"
-      rm -rf $STAGE_DIR/sqlcl
-      echo "🗜️  Unzipping latest SQLcl to $STAGE_DIR/sqlcl"
-      unzip   -qq -d $STAGE_DIR $STAGE_DIR/sqlcl-latest.zip
-      echo "$ETAG" > $STAGE_DIR/sqlcl.etag
-    else
+    # Get latest ETag from download
+    ETAG=$(curl -I -s "$DOWNLOAD_URL" | tr -d '\r'  | sed -En 's/^ETag: (.*)/\1/p')
+
+    if [[ -z "$ETAG" ]]; then
+      echo "⚠️  Latest E-Tag cannot be retrieved."
+    fi
+
+    # Download new SQLcl version if ETags don't match
+    if [[ "$ETAG" == "$CURRENT_ETAG" ]]; then
       echo "✅ SQLcl is current."
-    fi
+    # If remote ETag is not null, download zip file, otherwise run local install
+    elif [[ -n "$ETAG" ]]; then
+      echo "⬇️  Downloading latest SQLcl..."
+      if curl -sS -o $STAGE_DIR/$DOWNLOAD_FILE \
+              --header "If-None-Match: ${CURRENT_ETAG}" \
+              "$DOWNLOAD_URL"; then
 
+        if [[ -d $STAGE_DIR/sqlcl ]]; then
+          echo "🧹 Removing old SQLcl"
+          rm -rf $STAGE_DIR/sqlcl
+        fi
+
+        echo "🗜️  Unzipping latest SQLcl to $STAGE_DIR/sqlcl"
+        unzip   -qq -d $STAGE_DIR $STAGE_DIR/$DOWNLOAD_FILE
+
+        echo "$ETAG" > $STAGE_DIR/$ETAG_FILE
+      else
+        echo "⚠️  New SQLcl version cannot be downloaded, please check internet connection."
+      fi
+    fi
+  fi 
+
+  if [[ ! -f $STAGE_DIR/sqlcl/bin/sql ]]; then
+    echo "❌ SQLcl could not be installed. Please check your internet connection."
+    echo "❌ The download URL is '$DOWNLOAD_URL'"
+    return 1;
   else
-    echo "Internet connection to download.oracle.com not available."
-    if [[ ! -f $STAGE_DIR/sqlcl/bin/sql ]]; then
-      echo "❌ SQLcl cannot be downloaded, please check internet connection."
-      return 1;
-    else
-      echo "⚠️  Cannot verify latest SQLcl version."
-    fi
+    # Run SQLcl
+    echo "🚀 Launching SQLcl..."
+    $STAGE_DIR/sqlcl/bin/sql "$@"
   fi
-
-   # Run SQLcl
-   echo "🚀 Launching SQLcl..."
-   $STAGE_DIR/sqlcl/bin/sql "$@"
 }
