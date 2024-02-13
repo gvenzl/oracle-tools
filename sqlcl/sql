@@ -31,49 +31,55 @@ sql() {
   DOWNLOAD_URL="https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip"
   DOWNLOAD_FILE="sqlcl-latest.zip"
   ETAG_FILE="sqlcl.etag"
+  # Explicitly empty if no proxy is in use
+  CURL_PROXY=""
+  
+  # If a proxy is configured, use HTTPS over HTTP and pass it on to curl
+  if [[ -n "$HTTPS_PROXY" ]]; then
+    CURL_PROXY="-x $HTTPS_PROXY"
+  elif [[ -n "$HTTP_PROXY" ]]; then
+    CURL_PROXY="-x $HTTP_PROXY"
+  fi
 
   # Check whether an internet connection exists
-  if ! ping -c 1 -W 3 download.oracle.com > /dev/null; then
-    echo "⚠️  Cannot verify latest SQLcl version."
+  echo "🔄 Checking SQLcl version..."
+
+  # Get stored local ETag
+  if [[ -e $STAGE_DIR/$ETAG_FILE ]]; then
+    CURRENT_ETAG=$(cat $STAGE_DIR/$ETAG_FILE)
   else
-    echo "🔄 Checking SQLcl version..."
+    CURRENT_ETAG="none"
+  fi
 
-    # Get stored local ETag
-    if [[ -e $STAGE_DIR/$ETAG_FILE ]]; then
-      CURRENT_ETAG=$(cat $STAGE_DIR/$ETAG_FILE)
-    else
-      CURRENT_ETAG="none"
-    fi
+  # Get latest ETag from download
+  ETAG=$(curl $CURL_PROXY --connect-timeout 5 -I -s "$DOWNLOAD_URL" | tr -d '\r'  | sed -En 's/^ETag: (.*)/\1/p')
 
-    # Get latest ETag from download
-    ETAG=$(curl -I -s "$DOWNLOAD_URL" | tr -d '\r'  | sed -En 's/^ETag: (.*)/\1/p')
+  if [[ -z "$ETAG" ]]; then
+    echo "⚠️  Cannot verify latest SQLcl version."
+  fi
 
-    if [[ -z "$ETAG" ]]; then
-      echo "⚠️  Latest E-Tag cannot be retrieved."
-    fi
+  # Download new SQLcl version if ETags don't match
+  if [[ "$ETAG" == "$CURRENT_ETAG" ]]; then
+    echo "✅ SQLcl is current."
+  # If remote ETag is not null, download zip file, otherwise run local install
+  elif [[ -n "$ETAG" ]]; then
+    echo "⬇️  Downloading latest SQLcl..."
+    if curl -sS $CURL_PROXY --connect-timeout 5 \
+            -o $STAGE_DIR/$DOWNLOAD_FILE \
+            --header "If-None-Match: ${CURRENT_ETAG}" \
+            "$DOWNLOAD_URL"; then
 
-    # Download new SQLcl version if ETags don't match
-    if [[ "$ETAG" == "$CURRENT_ETAG" ]]; then
-      echo "✅ SQLcl is current."
-    # If remote ETag is not null, download zip file, otherwise run local install
-    elif [[ -n "$ETAG" ]]; then
-      echo "⬇️  Downloading latest SQLcl..."
-      if curl -sS -o $STAGE_DIR/$DOWNLOAD_FILE \
-              --header "If-None-Match: ${CURRENT_ETAG}" \
-              "$DOWNLOAD_URL"; then
-
-        if [[ -d $STAGE_DIR/sqlcl ]]; then
-          echo "🧹 Removing old SQLcl"
-          rm -rf $STAGE_DIR/sqlcl
-        fi
-
-        echo "🗜️  Unzipping latest SQLcl to $STAGE_DIR/sqlcl"
-        unzip   -qq -d $STAGE_DIR $STAGE_DIR/$DOWNLOAD_FILE
-
-        echo "$ETAG" > $STAGE_DIR/$ETAG_FILE
-      else
-        echo "⚠️  New SQLcl version cannot be downloaded, please check internet connection."
+      if [[ -d $STAGE_DIR/sqlcl ]]; then
+        echo "🧹 Removing old SQLcl"
+        rm -rf $STAGE_DIR/sqlcl
       fi
+
+      echo "🗜️  Unzipping latest SQLcl to $STAGE_DIR/sqlcl"
+      unzip   -qq -d $STAGE_DIR $STAGE_DIR/$DOWNLOAD_FILE
+
+      echo "$ETAG" > $STAGE_DIR/$ETAG_FILE
+    else
+      echo "⚠️  New SQLcl version cannot be downloaded, please check internet connection."
     fi
   fi 
 
