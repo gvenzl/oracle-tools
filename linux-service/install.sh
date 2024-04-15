@@ -48,11 +48,11 @@ sudo sed -i -e "s|###ORACLE_HOME###|$ORACLE_HOME|g" /etc/systemd/system/oracle-d
 echo "Reloading systemd daemon..."
 sudo systemctl daemon-reload
 
-echo "Enabling oracle database service..."
+echo "Enabling Oracle Database service..."
 sudo systemctl enable oracle-database
 
-echo "Starting oracle database service..."
+echo "Starting Oracle Database service..."
 sudo systemctl start oracle-database
 
-echo "Congratulations, the Oracle Database service has now been installed!"
-echo "You can now start and stop Oracle Database via 'systemclt start|stop oracle-database'."
+echo "Congratulations, the Oracle Database Linux service has been installed!"
+echo "You can now start and stop Oracle Database via 'systemctl start|stop oracle-database'."
