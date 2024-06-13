@@ -55,7 +55,7 @@ sql() {
   ETAG=$(curl $CURL_PROXY --connect-timeout 5 -I -s "$DOWNLOAD_URL" | tr -d '\r'  | sed -En 's/^ETag: (.*)/\1/p')
 
   if [[ -z "$ETAG" ]]; then
-    echo "⚠️  Cannot verify latest SQLcl version."
+    echo "⚠️ Cannot verify latest SQLcl version."
   fi
 
   # Download new SQLcl version if ETags don't match
@@ -63,7 +63,7 @@ sql() {
     echo "✅ SQLcl is current."
   # If remote ETag is not null, download zip file, otherwise run local install
   elif [[ -n "$ETAG" ]]; then
-    echo "⬇️  Downloading latest SQLcl..."
+    echo "⬇️ Downloading latest SQLcl..."
     if curl -sS $CURL_PROXY --connect-timeout 5 \
             -o $STAGE_DIR/$DOWNLOAD_FILE \
             --header "If-None-Match: ${CURRENT_ETAG}" \
@@ -74,7 +74,7 @@ sql() {
         rm -rf $STAGE_DIR/sqlcl
       fi
 
-      echo "🗜️  Unzipping latest SQLcl to $STAGE_DIR/sqlcl"
+      echo "🗜️ Unzipping latest SQLcl to $STAGE_DIR/sqlcl"
       unzip   -qq -d $STAGE_DIR $STAGE_DIR/$DOWNLOAD_FILE
       rm $STAGE_DIR/$DOWNLOAD_FILE
 
