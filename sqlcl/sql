@@ -76,6 +76,7 @@ sql() {
 
       echo "🗜️  Unzipping latest SQLcl to $STAGE_DIR/sqlcl"
       unzip   -qq -d $STAGE_DIR $STAGE_DIR/$DOWNLOAD_FILE
+      rm $STAGE_DIR/$DOWNLOAD_FILE
 
       echo "$ETAG" > $STAGE_DIR/$ETAG_FILE
     else
